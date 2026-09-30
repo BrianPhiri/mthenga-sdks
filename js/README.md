@@ -17,7 +17,7 @@ import { MthengaClient } from "mthenga";
 
 const client = new MthengaClient({
   baseUrl: "https://api.yourdomain.com",
-  apiKey: "rb_live_...",
+  apiKey: "mt_live_...",
 });
 
 const inbox = await client.createInbox({ channel: "email", username: "support" });
@@ -44,7 +44,7 @@ one) and `timeoutMs` (per request, default 15000, `0` disables).
 
 ## What this wraps
 
-Only the `rb_live_...` API-key surface: inboxes, messages, threads,
+Only the `mt_live_...` API-key surface: inboxes, messages, threads,
 attachments, webhooks, API keys, and per-org domain/WhatsApp settings. It
 does **not** wrap the dashboard's FusionAuth-backed human auth (register,
 login, invites). Same scope as the Go SDK.

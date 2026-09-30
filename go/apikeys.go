@@ -25,7 +25,7 @@ type CreateAPIKeyResponse struct {
 	Key string `json:"key"`
 }
 
-// CreateAPIKey mints another rb_live_... key for your org — requires the
+// CreateAPIKey mints another mt_live_... key for your org — requires the
 // Client already be authenticated with a valid key (self-service
 // rotation/expansion, not how a brand-new org gets its first key; that's
 // cmd/seed or the dashboard's own register flow on mthenga's side).

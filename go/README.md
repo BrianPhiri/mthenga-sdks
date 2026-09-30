@@ -13,7 +13,7 @@ go get github.com/BrianPhiri/mthenga-sdks/go
 ```go
 import mthenga "github.com/BrianPhiri/mthenga-sdks/go"
 
-client := mthenga.NewClient("https://api.yourdomain.com", "rb_live_...")
+client := mthenga.NewClient("https://api.yourdomain.com", "mt_live_...")
 
 inbox, err := client.CreateInbox(ctx, mthenga.CreateInboxRequest{
     Channel:  "email",
@@ -38,7 +38,7 @@ if mthenga.IsStatus(err, http.StatusNotFound) {
 
 ## What this wraps
 
-The `rb_live_...` API-key-authenticated surface only — inboxes, messages,
+The `mt_live_...` API-key-authenticated surface only — inboxes, messages,
 threads, webhooks, API keys, and per-org domain/WhatsApp settings. This is
 the surface a backend service integrates against to give an AI agent a
 real inbox. It does **not** wrap mthenga's separate FusionAuth-backed

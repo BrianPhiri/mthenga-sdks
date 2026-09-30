@@ -33,14 +33,14 @@ function mockFetch(status, body, headers = {}) {
 
 test("sendMessage builds the request and parses the response", async () => {
   const { fetch, calls } = mockFetch(201, JSON.stringify({ id: "msg_1", thread_id: "th_1", clean_text: "hi" }));
-  const client = new MthengaClient({ baseUrl: "https://api.example.com/", apiKey: "rb_live_test", fetch });
+  const client = new MthengaClient({ baseUrl: "https://api.example.com/", apiKey: "mt_live_test", fetch });
 
   const res = await client.sendMessage({ thread_id: "th_1", text: "hi", idempotencyKey: "k1" });
 
   assert.equal(res.id, "msg_1");
   assert.equal(calls[0].url, "https://api.example.com/v1/messages");
   assert.equal(calls[0].init.method, "POST");
-  assert.equal(calls[0].init.headers.Authorization, "Bearer rb_live_test");
+  assert.equal(calls[0].init.headers.Authorization, "Bearer mt_live_test");
   assert.equal(calls[0].init.headers["Idempotency-Key"], "k1");
   assert.deepEqual(JSON.parse(calls[0].init.body), { thread_id: "th_1", text: "hi" });
 });

@@ -3,7 +3,7 @@
 // Instagram. It runs anywhere with `fetch` and Web Crypto (Node 18+,
 // browsers, Deno, Bun, edge runtimes).
 //
-// It wraps only the rb_live_... API-key surface (inboxes, messages, threads,
+// It wraps only the mt_live_... API-key surface (inboxes, messages, threads,
 // attachments, webhooks, API keys, settings), not the dashboard's
 // FusionAuth-backed human auth. Same scope as the Go SDK.
 
@@ -158,7 +158,7 @@ export interface APIKey {
   revoked_at: string | null;
 }
 
-/** `key` is the raw rb_live_... key, shown exactly once. */
+/** `key` is the raw mt_live_... key, shown exactly once. */
 export interface CreateAPIKeyResponse extends APIKey {
   key: string;
 }

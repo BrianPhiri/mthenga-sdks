@@ -3,7 +3,7 @@
 // beyond the standard library, matching mthenga's own hand-rolled-client
 // philosophy (see its Postmark/WhatsApp/FusionAuth clients).
 //
-// This wraps the rb_live_... API-key-authenticated surface only (inboxes,
+// This wraps the mt_live_... API-key-authenticated surface only (inboxes,
 // messages, threads, webhooks, API keys, settings) — not the separate
 // FusionAuth-backed human/dashboard auth (register/login/invites), which
 // is a different actor and trust model.
@@ -24,7 +24,7 @@ import (
 const defaultTimeout = 15 * time.Second
 
 // Client calls mthenga's API as one organization, authenticated with a
-// single rb_live_... API key.
+// single mt_live_... API key.
 type Client struct {
 	baseURL    string
 	apiKey     string

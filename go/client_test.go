@@ -30,7 +30,7 @@ func newTestClient(t *testing.T, handler http.HandlerFunc) (*Client, *httptest.S
 	t.Helper()
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
-	return NewClient(srv.URL, "rb_live_test"), srv
+	return NewClient(srv.URL, "mt_live_test"), srv
 }
 
 func TestCreateInbox(t *testing.T) {
@@ -38,7 +38,7 @@ func TestCreateInbox(t *testing.T) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/inboxes" {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer rb_live_test" {
+		if got := r.Header.Get("Authorization"); got != "Bearer mt_live_test" {
 			t.Errorf("Authorization header = %q", got)
 		}
 		var body CreateInboxRequest
