@@ -98,6 +98,16 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 Verify against the **raw** request body, before any JSON parsing —
 re-serializing the parsed object and hashing that will not reliably match.
 
+## Security status
+
+Every message carries `security_status`: `passed`, `flags` and, when the
+server runs its semantic shield, `scores` (e.g. `{"prompt_injection": 0.93}`,
+a 0-1 probability). `passed: false` never means blocked; mthenga flags and
+delivers. In the server's default `score` mode a high score does not touch
+`passed`/`flags`, so threshold it yourself; in `flag` mode a score >= 0.8 also
+adds the `semantic_prompt_injection` flag. `scores` may be missing (shield off
+or unavailable), so treat it as optional. `flags` can be `null` when empty.
+
 ## Errors
 
 Every non-2xx response comes back as `*mthenga.Error`:

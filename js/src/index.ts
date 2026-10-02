@@ -62,6 +62,12 @@ export interface Thread {
 export interface SecurityStatus {
   passed: boolean;
   flags: string[];
+  /**
+   * Semantic-classifier probabilities (0-1), currently only `prompt_injection`.
+   * Absent when the server's semantic shield is off or was unavailable; a
+   * score alone never changes `passed` or `flags`.
+   */
+  scores?: Record<string, number>;
 }
 
 export interface Message {

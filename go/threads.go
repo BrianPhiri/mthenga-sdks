@@ -25,9 +25,15 @@ type Thread struct {
 // Passed:false does NOT mean the message was blocked — mthenga delivers
 // it regardless (flag, never block) and expects the caller to decide what
 // to do with Flags before letting an LLM act on the message unsupervised.
+//
+// Scores holds semantic-classifier probabilities (0-1), currently only
+// "prompt_injection". Absent (nil) when the server's semantic shield is
+// off or was unavailable for this message; a score alone never changes
+// Passed or Flags.
 type SecurityStatus struct {
-	Passed bool     `json:"passed"`
-	Flags  []string `json:"flags"`
+	Passed bool               `json:"passed"`
+	Flags  []string           `json:"flags"`
+	Scores map[string]float64 `json:"scores,omitempty"`
 }
 
 // Message is one inbound or outbound message within a Thread. CleanText

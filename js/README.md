@@ -119,6 +119,16 @@ Express, use `express.raw({ type: "application/json" })` and pass the
 `Buffer`. The check is asynchronous because Web Crypto is, and the comparison
 is constant-time.
 
+## Security status
+
+Every message carries `security_status`: `passed`, `flags` and, when the
+server runs its semantic shield, `scores` (e.g. `{"prompt_injection": 0.93}`,
+a 0-1 probability). `passed: false` never means blocked; mthenga flags and
+delivers. In the server's default `score` mode a high score does not touch
+`passed`/`flags`, so threshold it yourself; in `flag` mode a score >= 0.8 also
+adds the `semantic_prompt_injection` flag. `scores` may be missing (shield off
+or unavailable), so treat it as optional. `flags` can be `null` when empty.
+
 ## Errors
 
 ```ts
