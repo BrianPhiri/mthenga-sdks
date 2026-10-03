@@ -71,3 +71,15 @@ test("getAttachmentURL returns the redirect Location", async () => {
   assert.equal(await client.getAttachmentURL("att_1"), "https://r2.example.com/f?sig=x");
   assert.equal(calls[0].init.redirect, "manual");
 });
+
+test("createPartnerOrg sends name and external_ref and returns the child's key", async () => {
+  const { fetch, calls } = mockFetch(201, JSON.stringify({ org: { id: "o1", name: "Maya Shoes", external_ref: "proj-1", created_at: "2026-10-03T10:00:00Z" }, api_key: "mt_live_child" }));
+  const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "mt_live_partner", fetch });
+
+  const res = await client.createPartnerOrg("Maya Shoes", "proj-1");
+
+  assert.equal(res.org.id, "o1");
+  assert.equal(res.api_key, "mt_live_child");
+  assert.equal(calls[0].url, "https://api.example.com/v1/partner/orgs");
+  assert.deepEqual(JSON.parse(calls[0].init.body), { name: "Maya Shoes", external_ref: "proj-1" });
+});

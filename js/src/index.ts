@@ -169,6 +169,20 @@ export interface CreateAPIKeyResponse extends APIKey {
   key: string;
 }
 
+/** A child org a partner created (partner API). */
+export interface PartnerOrg {
+  id: string;
+  name: string;
+  external_ref?: string;
+  created_at: string;
+}
+
+/** A child org plus a new raw API key for it, shown once. */
+export interface PartnerOrgKey {
+  org: PartnerOrg;
+  api_key: string;
+}
+
 export interface EmailDomain {
   id: string;
   org_id: string;
@@ -353,6 +367,29 @@ export class MthengaClient {
   /** Immediate and irreversible. Idempotent for unknown/revoked ids. */
   async revokeAPIKey(id: string): Promise<void> {
     await this.request("DELETE", `/v1/api-keys/${enc(id)}`);
+  }
+
+  // Partner API — only for an org the Mthenga operator made a partner
+  // (others get a 403 MthengaError). Use each child's key with its own
+  // client for its inboxes, credentials, domains and webhooks.
+
+  /**
+   * Create a child org. With an `externalRef` (your own id for it) the call
+   * is idempotent: repeating it returns the same org, with a fresh key.
+   */
+  createPartnerOrg(name: string, externalRef?: string): Promise<PartnerOrgKey> {
+    return this.request("POST", "/v1/partner/orgs", { name, external_ref: externalRef });
+  }
+
+  /** Your child orgs, newest first. */
+  async listPartnerOrgs(): Promise<PartnerOrg[]> {
+    const res = await this.request<{ orgs: PartnerOrg[] }>("GET", "/v1/partner/orgs");
+    return res.orgs;
+  }
+
+  /** A new key for one of your child orgs (rotation or a lost key). */
+  createPartnerOrgAPIKey(orgId: string): Promise<PartnerOrgKey> {
+    return this.request("POST", `/v1/partner/orgs/${enc(orgId)}/api-keys`);
   }
 
   // Settings
