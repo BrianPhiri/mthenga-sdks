@@ -80,6 +80,29 @@ original response instead of sending again. Reusing the key with a
 *different* body returns `*Error{StatusCode: 422}`; a genuine race between
 two concurrent requests with the same key gives the loser `409`.
 
+## WhatsApp templates (outside the 24-hour window)
+
+WhatsApp only delivers free-form text within 24 hours of the customer's
+last message. Outside it, send an approved template instead of `Text`:
+
+```go
+resp, err := client.SendMessage(ctx, mthenga.SendMessageRequest{
+    InboxID: inboxID, // or ThreadID to reply in an existing conversation
+    To:      "254700000001",
+    Template: &mthenga.Template{
+        Name:       "booking_reminder",
+        Language:   "en",
+        Parameters: []string{"Amina", "Saturday 8am"}, // body {{1}}, {{2}}, ...
+    },
+})
+```
+
+Set exactly one of `Text` or `Template`; a template on a non-WhatsApp inbox
+is a `400`. A text send after the window has closed returns
+`*Error{StatusCode: 422}` whose message says to use a template; an
+unknown/unapproved template or a wrong parameter count is also a `422`.
+The stored message's `CleanText` reads `[template booking_reminder: Amina, Saturday 8am]`.
+
 ## Verifying webhook deliveries
 
 ```go

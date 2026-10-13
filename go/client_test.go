@@ -86,6 +86,28 @@ func TestSendMessage_IdempotencyKeyHeader(t *testing.T) {
 	}
 }
 
+func TestSendMessage_Template(t *testing.T) {
+	var got map[string]any
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&got)
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(SendMessageResponse{Message: Message{ID: "msg_1"}})
+	})
+
+	_, err := client.SendMessage(context.Background(), SendMessageRequest{
+		InboxID: "inbox_1", To: "254700000001",
+		Template: &Template{Name: "booking_reminder", Language: "en", Parameters: []string{"Amina", "Saturday 8am"}},
+	})
+	if err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+	b, _ := json.Marshal(got)
+	want := `{"inbox_id":"inbox_1","template":{"language":"en","name":"booking_reminder","parameters":["Amina","Saturday 8am"]},"to":"254700000001"}`
+	if string(b) != want {
+		t.Errorf("body = %s, want %s", b, want)
+	}
+}
+
 func TestSendMessage_PartialSuccessWarning(t *testing.T) {
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)

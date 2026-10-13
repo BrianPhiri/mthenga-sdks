@@ -45,6 +45,16 @@ test("sendMessage builds the request and parses the response", async () => {
   assert.deepEqual(JSON.parse(calls[0].init.body), { thread_id: "th_1", text: "hi" });
 });
 
+test("sendMessage sends a WhatsApp template", async () => {
+  const { fetch, calls } = mockFetch(201, JSON.stringify({ id: "msg_1" }));
+  const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });
+  const template = { name: "booking_reminder", language: "en", parameters: ["Amina", "Saturday 8am"] };
+
+  await client.sendMessage({ inbox_id: "inbox_1", to: "254700000001", template });
+
+  assert.deepEqual(JSON.parse(calls[0].init.body), { inbox_id: "inbox_1", to: "254700000001", template });
+});
+
 test("pagination goes in the query string", async () => {
   const { fetch, calls } = mockFetch(200, "[]");
   const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });

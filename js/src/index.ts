@@ -97,9 +97,23 @@ export interface SendMessageRequest {
   inbox_id?: string;
   to?: string;
   subject?: string;
-  text: string;
+  /** Exactly one of `text` or `template`. */
+  text?: string;
+  /**
+   * WhatsApp only: a pre-approved template, the only thing Meta delivers
+   * once 24 hours have passed since the customer's last message.
+   */
+  template?: Template;
   /** Sent as the Idempotency-Key header, not in the body. */
   idempotencyKey?: string;
+}
+
+export interface Template {
+  name: string;
+  /** e.g. "en", "en_US"; must match an approved translation. */
+  language: string;
+  /** Fill the template body's {{1}}, {{2}}, ... in order. */
+  parameters?: string[];
 }
 
 /**

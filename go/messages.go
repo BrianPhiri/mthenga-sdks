@@ -10,13 +10,18 @@ import (
 // ThreadID to reply within an existing conversation (Subject is ignored —
 // mthenga reuses "Re: " + the original subject for email), or set
 // InboxID + To to start a new one (Subject required for a new email
-// thread, ignored for WhatsApp).
+// thread, ignored for WhatsApp). Set exactly one of Text or Template.
 type SendMessageRequest struct {
 	ThreadID string `json:"thread_id,omitempty"`
 	InboxID  string `json:"inbox_id,omitempty"`
 	To       string `json:"to,omitempty"`
 	Subject  string `json:"subject,omitempty"`
-	Text     string `json:"text"`
+	Text     string `json:"text,omitempty"`
+
+	// Template sends a pre-approved WhatsApp template instead of Text —
+	// the only thing Meta delivers once 24 hours have passed since the
+	// customer's last message. WhatsApp inboxes only (400 otherwise).
+	Template *Template `json:"template,omitempty"`
 
 	// IdempotencyKey, if set, is sent as the Idempotency-Key header — a
 	// retried request with the same key (same org, same key, same body)
@@ -24,6 +29,15 @@ type SendMessageRequest struct {
 	// key with a different body gets *Error{StatusCode: 422}; two genuinely
 	// concurrent requests with the same key give the loser *Error{StatusCode: 409}.
 	IdempotencyKey string `json:"-"`
+}
+
+// Template names an approved WhatsApp template. Parameters fill the
+// template body's {{1}}, {{2}}, ... placeholders, in order. The stored
+// message's CleanText reads "[template name: p1, p2]".
+type Template struct {
+	Name       string   `json:"name"`
+	Language   string   `json:"language"` // e.g. "en", "en_US"; must match an approved translation
+	Parameters []string `json:"parameters,omitempty"`
 }
 
 // SendMessageResponse is almost always just the sent Message. Warning is
@@ -43,7 +57,10 @@ type SendMessageResponse struct {
 // 422 for idempotency-key misuse (same key, different body), 409 if a
 // concurrent request with the same idempotency key won the race, or 502
 // if the send itself failed at the provider (Postmark/Meta) — safe to
-// retry a 502.
+// retry a 502. WhatsApp errors the caller can act on are 422 with a
+// message saying what to do: the 24-hour window has closed (send a
+// Template instead), template missing or not approved, wrong parameter
+// count.
 func (c *Client) SendMessage(ctx context.Context, req SendMessageRequest) (*SendMessageResponse, error) {
 	var headers map[string]string
 	if req.IdempotencyKey != "" {

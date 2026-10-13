@@ -96,6 +96,29 @@ original response instead of sending again. Reusing the key with a
 *different* body throws a `MthengaError` with status `422`. When two requests
 with the same key run at once, the one that loses gets `409`.
 
+## WhatsApp templates (outside the 24-hour window)
+
+WhatsApp only delivers free-form text within 24 hours of the customer's
+last message. Outside it, send an approved template instead of `text`:
+
+```ts
+await client.sendMessage({
+  inbox_id: inboxId, // or thread_id to reply in an existing conversation
+  to: "254700000001",
+  template: {
+    name: "booking_reminder",
+    language: "en",
+    parameters: ["Amina", "Saturday 8am"], // body {{1}}, {{2}}, ...
+  },
+});
+```
+
+Set exactly one of `text` or `template`; a template on a non-WhatsApp inbox
+is a `400`. A text send after the window has closed throws a `MthengaError`
+with status `422` whose message says to use a template; an
+unknown/unapproved template or a wrong parameter count is also a `422`.
+The stored message's `clean_text` reads `[template booking_reminder: Amina, Saturday 8am]`.
+
 ## Verifying webhook deliveries
 
 ```ts
