@@ -55,6 +55,16 @@ test("sendMessage sends a WhatsApp template", async () => {
   assert.deepEqual(JSON.parse(calls[0].init.body), { inbox_id: "inbox_1", to: "254700000001", template });
 });
 
+test("listWhatsAppTemplates", async () => {
+  const tpl = { name: "booking_reminder", language: "en", status: "APPROVED", category: "UTILITY", body: "Hi {{1}}", parameter_count: 1 };
+  const { fetch, calls } = mockFetch(200, JSON.stringify([tpl]));
+  const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });
+
+  assert.deepEqual(await client.listWhatsAppTemplates("inbox_1"), [tpl]);
+  assert.equal(calls[0].url, "https://api.example.com/v1/inboxes/inbox_1/whatsapp-templates");
+  assert.equal(calls[0].init.method, "GET");
+});
+
 test("pagination goes in the query string", async () => {
   const { fetch, calls } = mockFetch(200, "[]");
   const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });

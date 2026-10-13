@@ -108,6 +108,23 @@ func TestSendMessage_Template(t *testing.T) {
 	}
 }
 
+func TestListWhatsAppTemplates(t *testing.T) {
+	var gotPath string
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.Method + " " + r.URL.Path
+		w.Write([]byte(`[{"name":"booking_reminder","language":"en","status":"APPROVED","category":"UTILITY","body":"Hi {{1}}, see you {{2}}.","parameter_count":2}]`))
+	})
+
+	got, err := client.ListWhatsAppTemplates(context.Background(), "inbox_1")
+	if err != nil {
+		t.Fatalf("ListWhatsAppTemplates: %v", err)
+	}
+	want := WhatsAppTemplate{Name: "booking_reminder", Language: "en", Status: "APPROVED", Category: "UTILITY", Body: "Hi {{1}}, see you {{2}}.", ParameterCount: 2}
+	if gotPath != "GET /v1/inboxes/inbox_1/whatsapp-templates" || len(got) != 1 || got[0] != want {
+		t.Errorf("%s -> %+v", gotPath, got)
+	}
+}
+
 func TestSendMessage_PartialSuccessWarning(t *testing.T) {
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)

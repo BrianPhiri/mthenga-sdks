@@ -20,6 +20,8 @@ export interface Inbox {
   full_email: string | null;
   whatsapp_phone_number: string | null;
   whatsapp_phone_number_id: string | null;
+  /** Null until set on create or recorded from the number's first inbound webhook. */
+  whatsapp_business_account_id: string | null;
   /** Facebook Page id (messenger) or IG Business Account id (instagram). */
   external_account_id: string | null;
   external_account_name: string | null;
@@ -42,8 +44,23 @@ export interface CreateInboxRequest {
   domain?: string;
   phone_number?: string;
   phone_number_id?: string;
+  /** Optional; needed by listWhatsAppTemplates. Recorded from the first inbound webhook if omitted. */
+  whatsapp_business_account_id?: string;
   external_account_id?: string;
   external_account_name?: string;
+}
+
+/** One template on a WhatsApp inbox's WhatsApp Business Account. */
+export interface WhatsAppTemplate {
+  name: string;
+  language: string;
+  /** Meta's: APPROVED, PENDING, REJECTED, ... Only APPROVED can be sent. */
+  status: string;
+  category: string;
+  /** Body text with its {{1}}-style placeholders. */
+  body: string;
+  /** How many `parameters` a template send needs. */
+  parameter_count: number;
 }
 
 export interface Thread {
@@ -303,6 +320,14 @@ export class MthengaClient {
   /** Most recently active first. Server default limit 50, max 200. */
   listInboxThreads(inboxId: string, page?: Page): Promise<Thread[]> {
     return this.request("GET", `/v1/inboxes/${enc(inboxId)}/threads${qs(page)}`);
+  }
+
+  /**
+   * Live from Meta. 404 not your inbox, 400 not WhatsApp, 422 no WhatsApp
+   * Business Account ID on the inbox yet (or Meta rejects it).
+   */
+  listWhatsAppTemplates(inboxId: string): Promise<WhatsAppTemplate[]> {
+    return this.request("GET", `/v1/inboxes/${enc(inboxId)}/whatsapp-templates`);
   }
 
   // Messages and threads

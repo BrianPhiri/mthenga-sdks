@@ -53,6 +53,7 @@ login, invites). Same scope as the Go SDK.
 | :--- | :--- |
 | `createInbox`, `getInbox` | `POST/GET /v1/inboxes` |
 | `deactivateInbox`, `reactivateInbox` | `POST /v1/inboxes/:id/(de)activate` |
+| `listWhatsAppTemplates` | `GET /v1/inboxes/:id/whatsapp-templates` |
 | `listInboxThreads` | `GET /v1/inboxes/:id/threads` |
 | `sendMessage` | `POST /v1/messages` |
 | `getThread`, `listThreadMessages` | `GET /v1/threads/:id[/messages]` |
@@ -118,6 +119,13 @@ is a `400`. A text send after the window has closed throws a `MthengaError`
 with status `422` whose message says to use a template; an
 unknown/unapproved template or a wrong parameter count is also a `422`.
 The stored message's `clean_text` reads `[template booking_reminder: Amina, Saturday 8am]`.
+
+`listWhatsAppTemplates(inboxId)` lists the inbox's templates live from Meta
+(`name`, `language`, `status`, `category`, `body` with its `{{1}}`
+placeholders, `parameter_count`). It needs the inbox's
+`whatsapp_business_account_id`: pass it to `createInbox`, or mthenga records
+it from the number's first inbound message. Without one it throws a
+`MthengaError` with status `422`.
 
 ## Verifying webhook deliveries
 

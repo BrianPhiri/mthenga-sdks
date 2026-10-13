@@ -51,6 +51,7 @@ calling an API), out of scope for a machine client.
 | `CreateInbox`, `GetInbox` | `POST/GET /v1/inboxes` |
 | `DeactivateInbox`, `ReactivateInbox` | `POST /v1/inboxes/:id/(de)activate` |
 | `ListInboxThreads` | `GET /v1/inboxes/:id/threads` |
+| `ListWhatsAppTemplates` | `GET /v1/inboxes/:id/whatsapp-templates` |
 | `SendMessage` | `POST /v1/messages` |
 | `GetThread`, `ListThreadMessages` | `GET /v1/threads/:id[/messages]` |
 | `GetAttachmentURL` | `GET /v1/attachments/:id` |
@@ -102,6 +103,13 @@ is a `400`. A text send after the window has closed returns
 `*Error{StatusCode: 422}` whose message says to use a template; an
 unknown/unapproved template or a wrong parameter count is also a `422`.
 The stored message's `CleanText` reads `[template booking_reminder: Amina, Saturday 8am]`.
+
+`ListWhatsAppTemplates(ctx, inboxID)` lists the inbox's templates live from
+Meta (`Name`, `Language`, `Status`, `Category`, `Body` with its `{{1}}`
+placeholders, `ParameterCount`). It needs the inbox's
+`WhatsAppBusinessAccountID`: pass it in `CreateInboxRequest`, or mthenga
+records it from the number's first inbound message. Without one it returns
+`*Error{StatusCode: 422}`.
 
 ## Verifying webhook deliveries
 
