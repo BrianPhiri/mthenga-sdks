@@ -113,12 +113,12 @@ export interface Attachment {
   size_bytes: number;
 }
 
-/** A file to send. `content` is the file's bytes, base64-encoded. */
-export interface OutboundAttachment {
+/** A file stored for sending (`uploadAttachment`); name its `id` in `attachment_ids`. */
+export interface Upload {
+  id: string;
   filename: string;
-  /** image/jpeg, image/png or application/pdf, matching the bytes. */
   content_type: string;
-  content: string;
+  size_bytes: number;
 }
 
 /**
@@ -138,10 +138,12 @@ export interface SendMessageRequest {
    */
   template?: Template;
   /**
-   * Email and WhatsApp only: up to 3 files, 5 MB each, 10 MB total. `text`
-   * may be omitted when files are set; not combinable with `template`.
+   * Uploads (from `uploadAttachment`) to send. Email needs `text` and takes
+   * several, 7 MB in total; WhatsApp, Messenger and Instagram take exactly
+   * one per message (WhatsApp uses `text` as the caption; Messenger and
+   * Instagram can't carry text with a file). Not combinable with `template`.
    */
-  attachments?: OutboundAttachment[];
+  attachment_ids?: string[];
   /** Sent as the Idempotency-Key header, not in the body. */
   idempotencyKey?: string;
 }
@@ -301,10 +303,10 @@ export class MthengaClient {
       method,
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
-        ...(body !== undefined && { "Content-Type": "application/json" }),
+        ...(body !== undefined && !(body instanceof FormData) && { "Content-Type": "application/json" }),
         ...headers,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined || body instanceof FormData ? (body as FormData | undefined) : JSON.stringify(body),
       redirect,
       signal: this.timeoutMs > 0 ? AbortSignal.timeout(this.timeoutMs) : undefined,
     });
@@ -315,6 +317,16 @@ export class MthengaClient {
   private async request<T>(method: string, path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
     const text = await (await this.send(method, path, body, headers)).text();
     return (text ? JSON.parse(text) : undefined) as T;
+  }
+
+  /**
+   * Stores one file (up to 25 MB) for a later `sendMessage` via
+   * POST /v1/attachments. Uploads not sent within 24 hours are deleted.
+   */
+  uploadAttachment(filename: string, contentType: string, data: Blob | Uint8Array<ArrayBuffer>): Promise<Upload> {
+    const form = new FormData();
+    form.append("file", data instanceof Blob ? data : new Blob([data], { type: contentType }), filename);
+    return this.request("POST", "/v1/attachments", form);
   }
 
   // Inboxes

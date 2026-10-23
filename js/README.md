@@ -58,6 +58,7 @@ login, invites). Same scope as the Go SDK.
 | `listInboxThreads` | `GET /v1/inboxes/:id/threads` |
 | `sendMessage` | `POST /v1/messages` |
 | `getThread`, `listThreadMessages` | `GET /v1/threads/:id[/messages]` |
+| `uploadAttachment` | `POST /v1/attachments` |
 | `getAttachmentURL` | `GET /v1/attachments/:id` |
 | `createWebhook`, `listWebhooks`, `deleteWebhook`, `rotateWebhookSecret` | `.../v1/webhooks` |
 | `listWebhookDeliveries` | `GET /v1/webhook-deliveries` |

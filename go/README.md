@@ -161,21 +161,25 @@ records it from the number's first inbound message. Without one it returns
 
 ## Sending files
 
+Upload first, then name the upload in `AttachmentIDs`:
+
 ```go
+up, err := client.UploadAttachment(ctx, "invoice.pdf", "application/pdf", pdfBytes)
+if err != nil {
+    return err
+}
 resp, err := client.SendMessage(ctx, mthenga.SendMessageRequest{
-    ThreadID: threadID,
-    Text:     "Here is your invoice", // optional when files are set
-    Attachments: []mthenga.OutboundAttachment{
-        {Filename: "invoice.pdf", ContentType: "application/pdf", Content: pdfBytes},
-    },
+    ThreadID:      threadID,
+    Text:          "Here is your invoice",
+    AttachmentIDs: []string{up.ID},
 })
 ```
 
-Email and WhatsApp only (Messenger/Instagram return `400`). Up to 3 files,
-`image/jpeg`, `image/png` or `application/pdf` (the type must match the
-bytes), 5 MB each and 10 MB in total; not combinable with `Template`. On
-WhatsApp a single file carries the text as its caption (up to 1024
-characters); otherwise the text goes first, then each file.
+Uploads take up to 25 MB and are deleted if not sent within 24 hours.
+Per channel: email needs `Text` and allows several files, 7 MB in total;
+WhatsApp, Messenger and Instagram take exactly one file per message. On
+WhatsApp `Text` becomes the caption; Messenger and Instagram can't carry
+text with a file, so send it separately. Not combinable with `Template`.
 
 Inbound files arrive on the `message.received` webhook: decode the body's
 `message` into `mthenga.Message` and read `Attachments` (`ID`, `Filename`,

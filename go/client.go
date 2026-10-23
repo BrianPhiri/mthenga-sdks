@@ -80,6 +80,19 @@ func IsStatus(err error, status int) bool {
 	return false
 }
 
+// newAPIError builds the *Error for a non-2xx response, reading mthenga's
+// {"error": "..."} message when the body has one.
+func newAPIError(status int, body []byte) *Error {
+	apiErr := &Error{StatusCode: status, RawBody: string(body)}
+	var parsed struct {
+		Error string `json:"error"`
+	}
+	if json.Unmarshal(body, &parsed) == nil {
+		apiErr.Message = parsed.Error
+	}
+	return apiErr
+}
+
 // request performs one HTTP call. body is marshaled to JSON if non-nil;
 // out is decoded from the JSON response body if non-nil. headers are
 // applied after Authorization/Content-Type so a caller can add or (in
@@ -106,6 +119,12 @@ func (c *Client) request(ctx context.Context, method, path string, body, out any
 		req.Header.Set(k, v)
 	}
 
+	return c.do(req, out)
+}
+
+// do sends a built request and decodes the response like request does:
+// an *Error for 4xx/5xx, out from the JSON body otherwise.
+func (c *Client) do(req *http.Request, out any) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("mthenga request failed: %w", err)
@@ -118,14 +137,7 @@ func (c *Client) request(ctx context.Context, method, path string, body, out any
 	}
 
 	if resp.StatusCode >= 400 {
-		apiErr := &Error{StatusCode: resp.StatusCode, RawBody: string(respBody)}
-		var parsed struct {
-			Error string `json:"error"`
-		}
-		if json.Unmarshal(respBody, &parsed) == nil {
-			apiErr.Message = parsed.Error
-		}
-		return apiErr
+		return newAPIError(resp.StatusCode, respBody)
 	}
 
 	if out != nil && len(respBody) > 0 {

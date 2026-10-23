@@ -23,12 +23,12 @@ type SendMessageRequest struct {
 	// customer's last message. WhatsApp inboxes only (400 otherwise).
 	Template *Template `json:"template,omitempty"`
 
-	// Attachments are files to send with the message (email and WhatsApp
-	// only; Messenger/Instagram are a 400). Up to 3 files, each image/jpeg,
-	// image/png or application/pdf matching its bytes, 5 MB each and 10 MB
-	// in total. Text may be empty when files are set; can't be combined
-	// with Template.
-	Attachments []OutboundAttachment `json:"attachments,omitempty"`
+	// AttachmentIDs name files uploaded with UploadAttachment. Email takes
+	// several alongside Text (Text required, 7 MB in total); WhatsApp,
+	// Messenger and Instagram take exactly one per message, and on WhatsApp
+	// Text becomes its caption (Messenger and Instagram can't carry text with
+	// a file). Can't be combined with Template.
+	AttachmentIDs []string `json:"attachment_ids,omitempty"`
 
 	// IdempotencyKey, if set, is sent as the Idempotency-Key header — a
 	// retried request with the same key (same org, same key, same body)
@@ -36,14 +36,6 @@ type SendMessageRequest struct {
 	// key with a different body gets *Error{StatusCode: 422}; two genuinely
 	// concurrent requests with the same key give the loser *Error{StatusCode: 409}.
 	IdempotencyKey string `json:"-"`
-}
-
-// OutboundAttachment is one file to send. Content is the raw bytes (sent
-// as base64 in JSON).
-type OutboundAttachment struct {
-	Filename    string `json:"filename"`
-	ContentType string `json:"content_type"`
-	Content     []byte `json:"content"`
 }
 
 // Template names an approved WhatsApp template. Parameters fill the

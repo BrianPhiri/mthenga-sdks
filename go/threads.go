@@ -56,9 +56,10 @@ type Message struct {
 	InReplyTo      string         `json:"in_reply_to"`
 	CreatedAt      time.Time      `json:"created_at"`
 
-	// Attachments is set on message.received webhook payloads (decode the
-	// body's "message" into Message). Fetch a file's bytes with
-	// GetAttachmentURL(ctx, a.ID).
+	// Attachments are the message's files, inbound or sent: on
+	// message.received webhook payloads (decode the body's "message" into
+	// Message), thread message reads and the SendMessage response. Fetch a
+	// file's bytes with GetAttachmentURL(ctx, a.ID).
 	Attachments []Attachment `json:"attachments,omitempty"`
 }
 

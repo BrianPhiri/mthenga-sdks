@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -108,24 +109,37 @@ func TestSendMessage_Template(t *testing.T) {
 	}
 }
 
-func TestSendMessage_Attachments(t *testing.T) {
-	var got map[string]any
+func TestUploadThenSendAttachment(t *testing.T) {
+	var sent map[string]any
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&got)
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(SendMessageResponse{Message: Message{ID: "msg_1"}})
+		switch r.URL.Path {
+		case "/v1/attachments":
+			file, header, err := r.FormFile("file")
+			if err != nil {
+				t.Fatalf("FormFile: %v", err)
+			}
+			data, _ := io.ReadAll(file)
+			if header.Filename != `menu "v2".pdf` || header.Header.Get("Content-Type") != "application/pdf" || string(data) != "%PDF-1.4" {
+				t.Errorf("upload = %q %q %q", header.Filename, header.Header.Get("Content-Type"), data)
+			}
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"id":"up_1","filename":"menu \"v2\".pdf","content_type":"application/pdf","size_bytes":8}`))
+		case "/v1/messages":
+			json.NewDecoder(r.Body).Decode(&sent)
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(SendMessageResponse{Message: Message{ID: "msg_1"}})
+		}
 	})
 
-	_, err := client.SendMessage(context.Background(), SendMessageRequest{
-		ThreadID:    "th_1",
-		Attachments: []OutboundAttachment{{Filename: "a.pdf", ContentType: "application/pdf", Content: []byte("%PDF-1.4")}},
-	})
-	if err != nil {
+	up, err := client.UploadAttachment(context.Background(), `menu "v2".pdf`, "application/pdf", []byte("%PDF-1.4"))
+	if err != nil || up.ID != "up_1" || up.SizeBytes != 8 {
+		t.Fatalf("UploadAttachment = %+v, %v", up, err)
+	}
+	if _, err := client.SendMessage(context.Background(), SendMessageRequest{ThreadID: "th_1", Text: "Our menu", AttachmentIDs: []string{up.ID}}); err != nil {
 		t.Fatalf("SendMessage: %v", err)
 	}
-	b, _ := json.Marshal(got)
-	want := `{"attachments":[{"content":"JVBERi0xLjQ=","content_type":"application/pdf","filename":"a.pdf"}],"thread_id":"th_1"}`
-	if string(b) != want {
+	b, _ := json.Marshal(sent)
+	if want := `{"attachment_ids":["up_1"],"text":"Our menu","thread_id":"th_1"}`; string(b) != want {
 		t.Errorf("body = %s, want %s", b, want)
 	}
 }

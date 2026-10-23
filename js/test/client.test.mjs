@@ -55,6 +55,23 @@ test("sendMessage sends a WhatsApp template", async () => {
   assert.deepEqual(JSON.parse(calls[0].init.body), { inbox_id: "inbox_1", to: "254700000001", template });
 });
 
+test("uploadAttachment posts multipart, then sendMessage names it", async () => {
+  const { fetch, calls } = mockFetch(201, JSON.stringify({ id: "up_1", filename: "menu.pdf", content_type: "application/pdf", size_bytes: 8 }));
+  const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });
+
+  const up = await client.uploadAttachment("menu.pdf", "application/pdf", new TextEncoder().encode("%PDF-1.4"));
+  await client.sendMessage({ thread_id: "th_1", text: "Our menu", attachment_ids: [up.id] });
+
+  assert.equal(up.id, "up_1");
+  assert.equal(calls[0].url, "https://api.example.com/v1/attachments");
+  assert.equal(calls[0].init.headers["Content-Type"], undefined);
+  const file = calls[0].init.body.get("file");
+  assert.equal(file.name, "menu.pdf");
+  assert.equal(file.type, "application/pdf");
+  assert.equal(await file.text(), "%PDF-1.4");
+  assert.deepEqual(JSON.parse(calls[1].init.body), { thread_id: "th_1", text: "Our menu", attachment_ids: ["up_1"] });
+});
+
 test("listWhatsAppTemplates", async () => {
   const tpl = { name: "booking_reminder", language: "en", status: "APPROVED", category: "UTILITY", body: "Hi {{1}}", parameter_count: 1 };
   const { fetch, calls } = mockFetch(200, JSON.stringify([tpl]));
