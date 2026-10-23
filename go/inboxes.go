@@ -92,8 +92,10 @@ func (c *Client) ReactivateInbox(ctx context.Context, id string) (*Inbox, error)
 // DeleteInbox permanently deletes an inbox together with its conversations,
 // messages and attachments, and frees its address or phone number for reuse
 // (DeactivateInbox does not). Irreversible. It only frees mthenga's record:
-// nothing changes on Meta's side for WhatsApp, Messenger or Instagram. A
-// missing or foreign id returns *Error{StatusCode: 404}.
+// nothing changes on Meta's side for WhatsApp, Messenger or Instagram. It
+// deletes immediately: the dashboard's type-the-name confirmation is not part
+// of the API, so confirm with your own user first. A missing or foreign id
+// returns *Error{StatusCode: 404}.
 func (c *Client) DeleteInbox(ctx context.Context, id string) error {
 	return c.request(ctx, http.MethodDelete, "/v1/inboxes/"+id, nil, nil, nil)
 }

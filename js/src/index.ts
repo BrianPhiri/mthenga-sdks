@@ -353,8 +353,9 @@ export class MthengaClient {
   /**
    * Permanently deletes the inbox with its conversations, messages and
    * attachments, and frees its address or phone number for reuse (deactivate
-   * does not). Irreversible; changes nothing on Meta's side. 404 if missing
-   * or not your org's.
+   * does not). Irreversible; changes nothing on Meta's side. Deletes
+   * immediately: the dashboard's type-the-name confirmation is not part of the
+   * API, so confirm with your own user first. 404 if missing or not your org's.
    */
   async deleteInbox(id: string): Promise<void> {
     await this.request("DELETE", `/v1/inboxes/${enc(id)}`);

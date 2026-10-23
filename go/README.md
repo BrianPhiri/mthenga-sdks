@@ -114,6 +114,10 @@ claimed. `DeleteInbox(ctx, id)` removes the inbox with all its conversations,
 messages and attachments, and frees the address for reuse. It is irreversible
 and, for WhatsApp, Messenger and Instagram, changes nothing on Meta's side.
 
+The dashboard makes you type the inbox's name before it deletes, but the API
+(and so `DeleteInbox`) does not: the call deletes immediately. If your own
+app exposes delete to people, add your own confirmation step before calling it.
+
 ## Idempotent sends
 
 ```go
