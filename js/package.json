@@ -1,6 +1,6 @@
 {
   "name": "mthenga",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Client for mthenga, a programmatic inbox for AI agents over email, WhatsApp, Messenger and Instagram",
   "type": "module",
   "exports": {
