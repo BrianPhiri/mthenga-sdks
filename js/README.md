@@ -53,6 +53,7 @@ login, invites). Same scope as the Go SDK.
 | :--- | :--- |
 | `createInbox`, `getInbox` | `POST/GET /v1/inboxes` |
 | `deactivateInbox`, `reactivateInbox` | `POST /v1/inboxes/:id/(de)activate` |
+| `deleteInbox` | `DELETE /v1/inboxes/:id` |
 | `listWhatsAppTemplates` | `GET /v1/inboxes/:id/whatsapp-templates` |
 | `listInboxThreads` | `GET /v1/inboxes/:id/threads` |
 | `sendMessage` | `POST /v1/messages` |
@@ -61,7 +62,7 @@ login, invites). Same scope as the Go SDK.
 | `createWebhook`, `listWebhooks`, `deleteWebhook`, `rotateWebhookSecret` | `.../v1/webhooks` |
 | `listWebhookDeliveries` | `GET /v1/webhook-deliveries` |
 | `verifyWebhookSignature` | (pure function, no request) |
-| `createAPIKey`, `listAPIKeys`, `revokeAPIKey` | `.../v1/api-keys` |
+| `createAPIKey`, `listAPIKeys`, `rotateAPIKey`, `revokeAPIKey` | `.../v1/api-keys` |
 | `createEmailDomain` | `POST /v1/email-domains` |
 | `setWhatsAppCredentials` | `PUT /v1/whatsapp-credentials` |
 
@@ -77,6 +78,55 @@ const messages = await client.listThreadMessages(threadId, { limit: 100, offset:
 `getAttachmentURL` returns a 15-minute presigned URL without downloading the
 file. It needs to read a redirect's `Location` header, which browsers hide
 from `fetch`, so it works in server-side runtimes only.
+
+## Sending email via SMTP
+
+Software that only speaks SMTP (FusionAuth, most mail plugins) can relay
+through mthenga directly — no API client needed. The server is mthenga's
+own address on its SMTP port (587), login is an inbox's full email as the
+username and the org's `mt_live_` API key as the password, and the message
+then goes through the exact same path as `sendMessage` (verified domain,
+plan limits, Postmark, threading). Node has no built-in SMTP client, so use
+any — nodemailer shown:
+
+```ts
+import nodemailer from "nodemailer";
+
+const transport = nodemailer.createTransport({
+  host: "smtp.yourdomain.com",
+  port: 587,
+  secure: false, // STARTTLS — required when the server has TLS certs configured
+  auth: { user: "support@agents.example.com", pass: "mt_live_..." },
+});
+
+await transport.sendMail({
+  from: "noreply@agents.example.com", // must use the inbox's domain
+  to: "alice@example.com",
+  subject: "Password reset",
+  text: "Click to reset your password.",
+  html: "<p>Click to reset your password.</p>",
+});
+```
+
+The `From` address must use the authenticated inbox's domain. SMTP status
+codes map to the API's errors: `530`/`535` bad credentials, `554` unverified
+sending domain or plan limit reached, `452` rate limited (retry later),
+`451` transient failure (retry).
+
+## Rotating keys and deleting inboxes
+
+```ts
+// Mint a replacement (same name); the old key keeps working until revoked.
+const next = await client.rotateAPIKey(oldKeyId);
+// ...deploy next.key (shown once), then:
+await client.revokeAPIKey(oldKeyId);
+```
+
+`deactivateInbox` pauses an inbox but keeps its address or phone number
+claimed. `deleteInbox(id)` removes the inbox with all its conversations,
+messages and attachments, and frees the address for reuse. It is
+irreversible and, for WhatsApp, Messenger and Instagram, changes nothing on
+Meta's side.
 
 ## Idempotent sends
 

@@ -178,6 +178,37 @@ func TestDeleteWebhook_NoBody(t *testing.T) {
 	}
 }
 
+func TestDeleteInbox(t *testing.T) {
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete || r.URL.Path != "/v1/inboxes/inbox_1" {
+			t.Errorf("request = %s %s, want DELETE /v1/inboxes/inbox_1", r.Method, r.URL.Path)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	if err := client.DeleteInbox(context.Background(), "inbox_1"); err != nil {
+		t.Errorf("DeleteInbox: %v", err)
+	}
+}
+
+func TestRotateAPIKey(t *testing.T) {
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/api-keys/key-1/rotate" {
+			t.Errorf("request = %s %s, want POST /v1/api-keys/key-1/rotate", r.Method, r.URL.Path)
+		}
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"id":"key-2","name":"Production","key_prefix":"mt_live_abcd","key":"mt_live_abcdef"}`))
+	})
+
+	resp, err := client.RotateAPIKey(context.Background(), "key-1")
+	if err != nil {
+		t.Fatalf("RotateAPIKey: %v", err)
+	}
+	if resp.ID != "key-2" || resp.Name != "Production" || resp.Key != "mt_live_abcdef" {
+		t.Errorf("resp = %+v", resp)
+	}
+}
+
 func TestGetAttachmentURL_FollowsRedirectOnce(t *testing.T) {
 	const presigned = "https://storage.example.com/bucket/key?sig=abc"
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {

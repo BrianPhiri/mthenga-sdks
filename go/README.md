@@ -50,6 +50,7 @@ calling an API), out of scope for a machine client.
 | :--- | :--- |
 | `CreateInbox`, `GetInbox` | `POST/GET /v1/inboxes` |
 | `DeactivateInbox`, `ReactivateInbox` | `POST /v1/inboxes/:id/(de)activate` |
+| `DeleteInbox` | `DELETE /v1/inboxes/:id` |
 | `ListInboxThreads` | `GET /v1/inboxes/:id/threads` |
 | `ListWhatsAppTemplates` | `GET /v1/inboxes/:id/whatsapp-templates` |
 | `SendMessage` | `POST /v1/messages` |
@@ -58,13 +59,60 @@ calling an API), out of scope for a machine client.
 | `CreateWebhook`, `ListWebhooks`, `DeleteWebhook`, `RotateWebhookSecret` | `.../v1/webhooks` |
 | `ListWebhookDeliveries` | `GET /v1/webhook-deliveries` |
 | `VerifyWebhookSignature` | (pure function — no request) |
-| `CreateAPIKey`, `ListAPIKeys`, `RevokeAPIKey` | `.../v1/api-keys` |
+| `CreateAPIKey`, `ListAPIKeys`, `RotateAPIKey`, `RevokeAPIKey` | `.../v1/api-keys` |
 | `CreateEmailDomain` | `POST /v1/email-domains` |
 | `SetWhatsAppCredentials` | `PUT /v1/whatsapp-credentials` |
 
 See mthenga's own `04_api_reference.md` for exact request/response
 shapes and every documented error case — this client is a thin,
 line-for-line wrapper over that reference, not an abstraction on top of it.
+
+## Sending email via SMTP
+
+Software that only speaks SMTP (FusionAuth, most mail plugins) can relay
+through mthenga directly — no API client needed. The server is mthenga's
+own address on its SMTP port (587), login is an inbox's full email as the
+username and the org's `mt_live_` API key as the password, and the message
+then goes through the exact same path as `SendMessage` (verified domain,
+plan limits, Postmark, threading). Any SMTP client works; stdlib in Go:
+
+```go
+import "net/smtp"
+
+host := "smtp.yourdomain.com"
+auth := smtp.PlainAuth("", "support@agents.example.com", "mt_live_...", host)
+
+msg := []byte("From: Support <noreply@agents.example.com>\r\n" +
+    "To: alice@example.com\r\n" +
+    "Subject: Password reset\r\n" +
+    "Content-Type: text/html; charset=utf-8\r\n" +
+    "\r\n" +
+    "<p>Click to reset your password.</p>\r\n")
+
+err := smtp.SendMail(host+":587", auth, "noreply@agents.example.com",
+    []string{"alice@example.com"}, msg)
+```
+
+`SendMail` upgrades to STARTTLS automatically whenever the server advertises
+it (it's required when TLS certs are configured server-side). The `From`
+address must use the authenticated inbox's domain. SMTP status codes map to
+the API's errors: `530`/`535` bad credentials, `554` unverified sending
+domain or plan limit reached, `452` rate limited (retry later), `451`
+transient failure (retry).
+
+## Rotating keys and deleting inboxes
+
+```go
+// Mint a replacement (same name); the old key keeps working until revoked.
+next, err := client.RotateAPIKey(ctx, oldKeyID)
+// ...deploy next.Key (shown once), then:
+err = client.RevokeAPIKey(ctx, oldKeyID)
+```
+
+`DeactivateInbox` pauses an inbox but keeps its address or phone number
+claimed. `DeleteInbox(ctx, id)` removes the inbox with all its conversations,
+messages and attachments, and frees the address for reuse. It is irreversible
+and, for WhatsApp, Messenger and Instagram, changes nothing on Meta's side.
 
 ## Idempotent sends
 

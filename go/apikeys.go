@@ -51,6 +51,18 @@ func (c *Client) ListAPIKeys(ctx context.Context) ([]APIKey, error) {
 	return keys, nil
 }
 
+// RotateAPIKey mints a replacement for key id with the same name. The old
+// key stays active so you can switch your apps over first; call RevokeAPIKey
+// on it afterwards. The new raw Key is shown once. An unknown or already
+// revoked id returns *Error{StatusCode: 404}.
+func (c *Client) RotateAPIKey(ctx context.Context, id string) (*CreateAPIKeyResponse, error) {
+	var resp CreateAPIKeyResponse
+	if err := c.request(ctx, http.MethodPost, "/v1/api-keys/"+id+"/rotate", nil, &resp, nil); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // RevokeAPIKey invalidates a key immediately and irreversibly — any
 // request using it gets 401 from that point on. Idempotent: an unknown or
 // already-revoked id is not an error.

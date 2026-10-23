@@ -89,6 +89,15 @@ func (c *Client) ReactivateInbox(ctx context.Context, id string) (*Inbox, error)
 	return &inbox, nil
 }
 
+// DeleteInbox permanently deletes an inbox together with its conversations,
+// messages and attachments, and frees its address or phone number for reuse
+// (DeactivateInbox does not). Irreversible. It only frees mthenga's record:
+// nothing changes on Meta's side for WhatsApp, Messenger or Instagram. A
+// missing or foreign id returns *Error{StatusCode: 404}.
+func (c *Client) DeleteInbox(ctx context.Context, id string) error {
+	return c.request(ctx, http.MethodDelete, "/v1/inboxes/"+id, nil, nil, nil)
+}
+
 // ListInboxThreads lists conversations on one inbox, most recently active
 // first. Capped at 50 — mthenga has no pagination on this endpoint yet.
 func (c *Client) ListInboxThreads(ctx context.Context, inboxID string) ([]Thread, error) {

@@ -317,6 +317,16 @@ export class MthengaClient {
     return this.request("POST", `/v1/inboxes/${enc(id)}/reactivate`);
   }
 
+  /**
+   * Permanently deletes the inbox with its conversations, messages and
+   * attachments, and frees its address or phone number for reuse (deactivate
+   * does not). Irreversible; changes nothing on Meta's side. 404 if missing
+   * or not your org's.
+   */
+  async deleteInbox(id: string): Promise<void> {
+    await this.request("DELETE", `/v1/inboxes/${enc(id)}`);
+  }
+
   /** Most recently active first. Server default limit 50, max 200. */
   listInboxThreads(inboxId: string, page?: Page): Promise<Thread[]> {
     return this.request("GET", `/v1/inboxes/${enc(inboxId)}/threads${qs(page)}`);
@@ -401,6 +411,15 @@ export class MthengaClient {
   /** Active and revoked, newest first. */
   listAPIKeys(): Promise<APIKey[]> {
     return this.request("GET", "/v1/api-keys");
+  }
+
+  /**
+   * Mints a replacement with the same name; the new `key` is shown once. The
+   * old key stays active, so switch your apps over, then revokeAPIKey it.
+   * 404 for an unknown or already-revoked id.
+   */
+  rotateAPIKey(id: string): Promise<CreateAPIKeyResponse> {
+    return this.request("POST", `/v1/api-keys/${enc(id)}/rotate`);
   }
 
   /** Immediate and irreversible. Idempotent for unknown/revoked ids. */
