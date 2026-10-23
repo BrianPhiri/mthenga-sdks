@@ -55,6 +55,19 @@ type Message struct {
 	ExternalID     string         `json:"external_id"` // email Message-ID or WhatsApp wamid
 	InReplyTo      string         `json:"in_reply_to"`
 	CreatedAt      time.Time      `json:"created_at"`
+
+	// Attachments is set on message.received webhook payloads (decode the
+	// body's "message" into Message). Fetch a file's bytes with
+	// GetAttachmentURL(ctx, a.ID).
+	Attachments []Attachment `json:"attachments,omitempty"`
+}
+
+// Attachment announces a file on an inbound message.
+type Attachment struct {
+	ID          string `json:"id"`
+	Filename    string `json:"filename"`
+	ContentType string `json:"content_type"`
+	SizeBytes   int64  `json:"size_bytes"`
 }
 
 // GetThread fetches one thread by id. Returns *Error with StatusCode 404

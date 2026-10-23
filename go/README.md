@@ -159,6 +159,29 @@ placeholders, `ParameterCount`). It needs the inbox's
 records it from the number's first inbound message. Without one it returns
 `*Error{StatusCode: 422}`.
 
+## Sending files
+
+```go
+resp, err := client.SendMessage(ctx, mthenga.SendMessageRequest{
+    ThreadID: threadID,
+    Text:     "Here is your invoice", // optional when files are set
+    Attachments: []mthenga.OutboundAttachment{
+        {Filename: "invoice.pdf", ContentType: "application/pdf", Content: pdfBytes},
+    },
+})
+```
+
+Email and WhatsApp only (Messenger/Instagram return `400`). Up to 3 files,
+`image/jpeg`, `image/png` or `application/pdf` (the type must match the
+bytes), 5 MB each and 10 MB in total; not combinable with `Template`. On
+WhatsApp a single file carries the text as its caption (up to 1024
+characters); otherwise the text goes first, then each file.
+
+Inbound files arrive on the `message.received` webhook: decode the body's
+`message` into `mthenga.Message` and read `Attachments` (`ID`, `Filename`,
+`ContentType`, `SizeBytes`); `GetAttachmentURL(ctx, a.ID)` returns a
+short-lived download URL.
+
 ## Verifying webhook deliveries
 
 ```go

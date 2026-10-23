@@ -105,6 +105,22 @@ export interface Message {
   created_at: string;
 }
 
+/** A file on an inbound message; fetch its bytes with getAttachmentURL. */
+export interface Attachment {
+  id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+}
+
+/** A file to send. `content` is the file's bytes, base64-encoded. */
+export interface OutboundAttachment {
+  filename: string;
+  /** image/jpeg, image/png or application/pdf, matching the bytes. */
+  content_type: string;
+  content: string;
+}
+
 /**
  * Either `thread_id` (reply in an existing conversation) or `inbox_id` + `to`
  * (start a new one; `subject` required for a new email thread).
@@ -121,6 +137,11 @@ export interface SendMessageRequest {
    * once 24 hours have passed since the customer's last message.
    */
   template?: Template;
+  /**
+   * Email and WhatsApp only: up to 3 files, 5 MB each, 10 MB total. `text`
+   * may be omitted when files are set; not combinable with `template`.
+   */
+  attachments?: OutboundAttachment[];
   /** Sent as the Idempotency-Key header, not in the body. */
   idempotencyKey?: string;
 }
@@ -181,7 +202,7 @@ export interface WebhookEvent {
     subject?: string;
     clean_text: string;
     security_status: SecurityStatus;
-    attachments?: { id: string; filename: string; content_type: string; size_bytes: number }[];
+    attachments?: Attachment[];
     created_at: string;
   };
 }

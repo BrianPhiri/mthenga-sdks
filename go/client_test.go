@@ -108,6 +108,44 @@ func TestSendMessage_Template(t *testing.T) {
 	}
 }
 
+func TestSendMessage_Attachments(t *testing.T) {
+	var got map[string]any
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&got)
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(SendMessageResponse{Message: Message{ID: "msg_1"}})
+	})
+
+	_, err := client.SendMessage(context.Background(), SendMessageRequest{
+		ThreadID:    "th_1",
+		Attachments: []OutboundAttachment{{Filename: "a.pdf", ContentType: "application/pdf", Content: []byte("%PDF-1.4")}},
+	})
+	if err != nil {
+		t.Fatalf("SendMessage: %v", err)
+	}
+	b, _ := json.Marshal(got)
+	want := `{"attachments":[{"content":"JVBERi0xLjQ=","content_type":"application/pdf","filename":"a.pdf"}],"thread_id":"th_1"}`
+	if string(b) != want {
+		t.Errorf("body = %s, want %s", b, want)
+	}
+}
+
+func TestWebhookMessageAttachments(t *testing.T) {
+	body := []byte(`{"event":"message.received","message":{"id":"msg_1","channel":"whatsapp","clean_text":"see photo",` +
+		`"attachments":[{"id":"9b2c","filename":"photo.jpg","content_type":"image/jpeg","size_bytes":48213}],"created_at":"2026-10-23T10:00:00Z"}}`)
+	var payload struct {
+		Event   string  `json:"event"`
+		Message Message `json:"message"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		t.Fatal(err)
+	}
+	want := Attachment{ID: "9b2c", Filename: "photo.jpg", ContentType: "image/jpeg", SizeBytes: 48213}
+	if len(payload.Message.Attachments) != 1 || payload.Message.Attachments[0] != want {
+		t.Errorf("attachments = %+v, want [%+v]", payload.Message.Attachments, want)
+	}
+}
+
 func TestListWhatsAppTemplates(t *testing.T) {
 	var gotPath string
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
