@@ -243,6 +243,29 @@ func TestDeleteInbox(t *testing.T) {
 	}
 }
 
+func TestGetInboxSMTPAndCreateSMTPPassword(t *testing.T) {
+	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/inboxes/inbox_1":
+			_, _ = w.Write([]byte(`{"id":"inbox_1","channel":"email","created_at":"2026-01-01T00:00:00Z","smtp":{"host":"smtp.example.com","port":587,"security":"starttls","username":"a@x.example","password_set":false,"password_created_at":null,"password_last_used_at":null}}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/inboxes/inbox_1/smtp-password":
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{"host":"smtp.example.com","port":587,"security":"starttls","username":"a@x.example","password":"mt_smtp_abc","password_set":true,"password_created_at":"2026-01-01T00:00:00Z","password_last_used_at":null}`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+		}
+	})
+
+	inbox, err := client.GetInbox(context.Background(), "inbox_1")
+	if err != nil || inbox.SMTP == nil || inbox.SMTP.Port != 587 || inbox.SMTP.Username != "a@x.example" {
+		t.Fatalf("GetInbox = %+v, %v", inbox, err)
+	}
+	s, err := client.CreateSMTPPassword(context.Background(), "inbox_1")
+	if err != nil || s.Password != "mt_smtp_abc" || s.PasswordCreatedAt == nil || s.PasswordLastUsedAt != nil {
+		t.Fatalf("CreateSMTPPassword = %+v, %v", s, err)
+	}
+}
+
 func TestRotateAPIKey(t *testing.T) {
 	client, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/api-keys/key-1/rotate" {

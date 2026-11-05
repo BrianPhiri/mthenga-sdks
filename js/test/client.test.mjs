@@ -119,6 +119,17 @@ test("deleteInbox sends DELETE and resolves on 204", async () => {
   assert.equal(calls[0].init.method, "DELETE");
 });
 
+test("createSMTPPassword posts to the inbox and returns the settings", async () => {
+  const { fetch, calls } = mockFetch(201, JSON.stringify({ host: "smtp.example.com", port: 587, security: "starttls", username: "a@x.example", password: "mt_smtp_abc", password_set: true }));
+  const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });
+
+  const s = await client.createSMTPPassword("inbox_1");
+
+  assert.equal(calls[0].url, "https://api.example.com/v1/inboxes/inbox_1/smtp-password");
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(s.password, "mt_smtp_abc");
+});
+
 test("rotateAPIKey posts to the rotate endpoint and returns the new key", async () => {
   const { fetch, calls } = mockFetch(201, JSON.stringify({ id: "key-2", name: "Production", key_prefix: "mt_live_abcd", key: "mt_live_abcdef" }));
   const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "k", fetch });

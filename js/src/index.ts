@@ -28,6 +28,22 @@ export interface Inbox {
   shield_enabled: boolean;
   is_active: boolean;
   created_at: string;
+  /** Present on getInbox for email inboxes when the server runs the SMTP gateway. */
+  smtp?: SMTPSettings;
+}
+
+/** What an app's SMTP config needs to send as an inbox. */
+export interface SMTPSettings {
+  /** Absent if the operator didn't set SMTP_PUBLIC_HOST. */
+  host?: string;
+  port: number;
+  security: "starttls" | "none";
+  username: string;
+  /** Only on createSMTPPassword's response; never shown again. */
+  password?: string;
+  password_set: boolean;
+  password_created_at: string | null;
+  password_last_used_at: string | null;
 }
 
 /**
@@ -344,6 +360,22 @@ export class MthengaClient {
   /** 404 if missing or not your org's. */
   getInbox(id: string): Promise<Inbox> {
     return this.request("GET", `/v1/inboxes/${enc(id)}`);
+  }
+
+  /**
+   * Mints an SMTP password (mt_smtp_...) for an email inbox, returned once
+   * with the rest of the SMTP settings. It can only send as this inbox, so
+   * it's the one to give third-party apps. Calling again rotates: the old one
+   * stops working immediately. 404 if not your inbox or the SMTP gateway is
+   * off, 422 if not an email inbox.
+   */
+  createSMTPPassword(inboxId: string): Promise<SMTPSettings> {
+    return this.request("POST", `/v1/inboxes/${enc(inboxId)}/smtp-password`);
+  }
+
+  /** Revokes the inbox's SMTP password. Succeeds if there was none. */
+  async deleteSMTPPassword(inboxId: string): Promise<void> {
+    await this.request("DELETE", `/v1/inboxes/${enc(inboxId)}/smtp-password`);
   }
 
   /** Stops sending/receiving without deleting. Reversible via reactivateInbox. */
