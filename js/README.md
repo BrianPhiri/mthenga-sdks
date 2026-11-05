@@ -17,7 +17,7 @@ import { MthengaClient } from "mthenga";
 
 const client = new MthengaClient({
   baseUrl: "https://api.yourdomain.com",
-  apiKey: "mt_live_...",
+  apiKey: "mt_smtp_...",
 });
 
 const inbox = await client.createInbox({ channel: "email", username: "support" });
@@ -84,11 +84,19 @@ from `fetch`, so it works in server-side runtimes only.
 
 Software that only speaks SMTP (FusionAuth, most mail plugins) can relay
 through mthenga directly — no API client needed. The server is mthenga's
-own address on its SMTP port (587), login is an inbox's full email as the
-username and the org's `mt_live_` API key as the password, and the message
-then goes through the exact same path as `sendMessage` (verified domain,
+address on its SMTP port, login is an inbox's full email as the username,
+and the password is either that inbox's own SMTP password or the org's
+`mt_live_` API key. Prefer the inbox password for anything third-party: it
+can only send as that one inbox. `createSMTPPassword` mints it (shown once; calling
+again rotates), and `getInbox` returns the host, port and username in
+its `smtp` field. The message then goes through the exact same path as `sendMessage` (verified domain,
 plan limits, Postmark, threading). Node has no built-in SMTP client, so use
 any — nodemailer shown:
+
+```ts
+const smtp = await client.createSMTPPassword(inboxId);
+// smtp.host, smtp.port, smtp.username, smtp.password: paste into the other app, or:
+```
 
 ```ts
 import nodemailer from "nodemailer";
@@ -97,7 +105,7 @@ const transport = nodemailer.createTransport({
   host: "smtp.yourdomain.com",
   port: 587,
   secure: false, // STARTTLS — required when the server has TLS certs configured
-  auth: { user: "support@agents.example.com", pass: "mt_live_..." },
+  auth: { user: "support@agents.example.com", pass: "mt_smtp_..." },
 });
 
 await transport.sendMail({

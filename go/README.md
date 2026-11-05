@@ -13,7 +13,7 @@ go get github.com/BrianPhiri/mthenga-sdks/go
 ```go
 import mthenga "github.com/BrianPhiri/mthenga-sdks/go"
 
-client := mthenga.NewClient("https://api.yourdomain.com", "mt_live_...")
+client := mthenga.NewClient("https://api.yourdomain.com", "mt_smtp_...")
 
 inbox, err := client.CreateInbox(ctx, mthenga.CreateInboxRequest{
     Channel:  "email",
@@ -71,16 +71,24 @@ line-for-line wrapper over that reference, not an abstraction on top of it.
 
 Software that only speaks SMTP (FusionAuth, most mail plugins) can relay
 through mthenga directly — no API client needed. The server is mthenga's
-own address on its SMTP port (587), login is an inbox's full email as the
-username and the org's `mt_live_` API key as the password, and the message
-then goes through the exact same path as `SendMessage` (verified domain,
+address on its SMTP port, login is an inbox's full email as the username,
+and the password is either that inbox's own SMTP password or the org's
+`mt_live_` API key. Prefer the inbox password for anything third-party: it
+can only send as that one inbox. `CreateSMTPPassword` mints it (shown once; calling
+again rotates), and `GetInbox` returns the host, port and username in
+its `SMTP` field. The message then goes through the exact same path as `SendMessage` (verified domain,
 plan limits, Postmark, threading). Any SMTP client works; stdlib in Go:
+
+```go
+s, err := client.CreateSMTPPassword(ctx, inboxID)
+// s.Host, s.Port, s.Username, s.Password: paste into the other app, or:
+```
 
 ```go
 import "net/smtp"
 
 host := "smtp.yourdomain.com"
-auth := smtp.PlainAuth("", "support@agents.example.com", "mt_live_...", host)
+auth := smtp.PlainAuth("", "support@agents.example.com", "mt_smtp_...", host)
 
 msg := []byte("From: Support <noreply@agents.example.com>\r\n" +
     "To: alice@example.com\r\n" +

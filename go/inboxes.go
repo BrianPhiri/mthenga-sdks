@@ -26,6 +26,22 @@ type Inbox struct {
 	ShieldEnabled             bool      `json:"shield_enabled"`
 	IsActive                  bool      `json:"is_active"`
 	CreatedAt                 time.Time `json:"created_at"`
+	// SMTP is set by GetInbox for email inboxes when the server runs the
+	// SMTP gateway; nil otherwise.
+	SMTP *SMTPSettings `json:"smtp,omitempty"`
+}
+
+// SMTPSettings is what an app's SMTP config needs to send as an inbox.
+// Password is only ever set on CreateSMTPPassword's response.
+type SMTPSettings struct {
+	Host               string     `json:"host"` // empty if the operator didn't set SMTP_PUBLIC_HOST
+	Port               int        `json:"port"`
+	Security           string     `json:"security"` // "starttls" or "none"
+	Username           string     `json:"username"`
+	Password           string     `json:"password,omitempty"`
+	PasswordSet        bool       `json:"password_set"`
+	PasswordCreatedAt  *time.Time `json:"password_created_at"`
+	PasswordLastUsedAt *time.Time `json:"password_last_used_at"`
 }
 
 // CreateInboxRequest provisions either an email inbox (Username required,
@@ -67,6 +83,26 @@ func (c *Client) GetInbox(ctx context.Context, id string) (*Inbox, error) {
 		return nil, err
 	}
 	return &inbox, nil
+}
+
+// CreateSMTPPassword mints an SMTP password (mt_smtp_...) for an email
+// inbox and returns it with the rest of the SMTP settings. It is shown only
+// here. Unlike the org API key it can only send as this inbox, so it is the
+// one to give third-party apps. Calling it again rotates: the old password
+// stops working immediately. Returns *Error with StatusCode 404 if the inbox
+// isn't yours or the server's SMTP gateway is off, 422 if it isn't email.
+func (c *Client) CreateSMTPPassword(ctx context.Context, inboxID string) (*SMTPSettings, error) {
+	var s SMTPSettings
+	if err := c.request(ctx, http.MethodPost, "/v1/inboxes/"+inboxID+"/smtp-password", nil, &s, nil); err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+// DeleteSMTPPassword revokes the inbox's SMTP password; apps using it stop
+// sending. Succeeds if there was none.
+func (c *Client) DeleteSMTPPassword(ctx context.Context, inboxID string) error {
+	return c.request(ctx, http.MethodDelete, "/v1/inboxes/"+inboxID+"/smtp-password", nil, nil, nil)
 }
 
 // DeactivateInbox stops an inbox from accepting new inbound messages or
