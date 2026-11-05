@@ -144,6 +144,11 @@ export interface SendMessageRequest {
    * Instagram can't carry text with a file). Not combinable with `template`.
    */
   attachment_ids?: string[];
+  /**
+   * Email only: an HTML part. `text` is still required and becomes the
+   * plain-text alternative. Links in API-sent email are not click-tracked.
+   */
+  html?: string;
   /** Sent as the Idempotency-Key header, not in the body. */
   idempotencyKey?: string;
 }

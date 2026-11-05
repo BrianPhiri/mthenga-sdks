@@ -30,6 +30,11 @@ type SendMessageRequest struct {
 	// a file). Can't be combined with Template.
 	AttachmentIDs []string `json:"attachment_ids,omitempty"`
 
+	// HTML is an optional HTML part for email (400 on other channels). Text
+	// is still required: it becomes the plain-text alternative. Links in
+	// API-sent email are not rewritten for click tracking.
+	HTML string `json:"html,omitempty"`
+
 	// IdempotencyKey, if set, is sent as the Idempotency-Key header — a
 	// retried request with the same key (same org, same key, same body)
 	// replays the original response instead of sending again. Reusing the
