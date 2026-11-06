@@ -258,11 +258,26 @@ export interface PartnerOrgKey {
   api_key: string;
 }
 
+/**
+ * A custom sending domain. With Postmark automation on, `status` starts
+ * "pending" and the record fields hold the DNS to publish: TXT at
+ * `dkim_host` = `dkim_value` (required to send), CNAME `return_path_host` ->
+ * `return_path_value` (recommended). "manual" means operator-managed, no
+ * records. Only "verified" and "manual" domains may send.
+ */
 export interface EmailDomain {
   id: string;
   org_id: string;
   domain: string;
   created_at: string;
+  status: "pending" | "verified" | "failed" | "manual";
+  dkim_host: string | null;
+  dkim_value: string | null;
+  return_path_host: string | null;
+  return_path_value: string | null;
+  dkim_verified: boolean;
+  return_path_verified: boolean;
+  last_checked_at: string | null;
 }
 
 export interface Page {
@@ -526,6 +541,21 @@ export class MthengaClient {
   /** 409 if already registered to any org. */
   createEmailDomain(domain: string): Promise<EmailDomain> {
     return this.request("POST", "/v1/email-domains", { domain });
+  }
+
+  /** Your org's domains with status and DNS records. */
+  listEmailDomains(): Promise<EmailDomain[]> {
+    return this.request("GET", "/v1/email-domains");
+  }
+
+  /** Check the DNS records now instead of waiting for the background re-check. */
+  verifyEmailDomain(id: string): Promise<EmailDomain> {
+    return this.request("POST", `/v1/email-domains/${enc(id)}/verify`);
+  }
+
+  /** 409 while inboxes still use it. */
+  async deleteEmailDomain(id: string): Promise<void> {
+    await this.request("DELETE", `/v1/email-domains/${enc(id)}`);
   }
 
   /** Bring-your-own Meta app. Replaces any stored credentials. */

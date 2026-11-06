@@ -153,3 +153,14 @@ test("createPartnerOrg sends name and external_ref and returns the child's key",
   assert.equal(calls[0].url, "https://api.example.com/v1/partner/orgs");
   assert.deepEqual(JSON.parse(calls[0].init.body), { name: "Maya Shoes", external_ref: "proj-1" });
 });
+
+test("verifyEmailDomain posts to the domain and parses status", async () => {
+  const { fetch, calls } = mockFetch(200, JSON.stringify({ id: "d1", domain: "mail.acme.com", status: "verified", dkim_verified: true }));
+  const client = new MthengaClient({ baseUrl: "https://api.example.com", apiKey: "mt_live_test", fetch });
+
+  const d = await client.verifyEmailDomain("d1");
+
+  assert.equal(d.status, "verified");
+  assert.equal(calls[0].url, "https://api.example.com/v1/email-domains/d1/verify");
+  assert.equal(calls[0].init.method, "POST");
+});

@@ -60,7 +60,7 @@ calling an API), out of scope for a machine client.
 | `ListWebhookDeliveries` | `GET /v1/webhook-deliveries` |
 | `VerifyWebhookSignature` | (pure function — no request) |
 | `CreateAPIKey`, `ListAPIKeys`, `RotateAPIKey`, `RevokeAPIKey` | `.../v1/api-keys` |
-| `CreateEmailDomain` | `POST /v1/email-domains` |
+| `CreateEmailDomain`, `ListEmailDomains`, `VerifyEmailDomain`, `DeleteEmailDomain` | `.../v1/email-domains` |
 | `SetWhatsAppCredentials` | `PUT /v1/whatsapp-credentials` |
 
 See mthenga's own `04_api_reference.md` for exact request/response

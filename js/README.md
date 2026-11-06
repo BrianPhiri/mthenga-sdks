@@ -64,7 +64,7 @@ login, invites). Same scope as the Go SDK.
 | `listWebhookDeliveries` | `GET /v1/webhook-deliveries` |
 | `verifyWebhookSignature` | (pure function, no request) |
 | `createAPIKey`, `listAPIKeys`, `rotateAPIKey`, `revokeAPIKey` | `.../v1/api-keys` |
-| `createEmailDomain` | `POST /v1/email-domains` |
+| `createEmailDomain`, `listEmailDomains`, `verifyEmailDomain`, `deleteEmailDomain` | `.../v1/email-domains` |
 | `setWhatsAppCredentials` | `PUT /v1/whatsapp-credentials` |
 
 Request and response objects use the API's own snake_case field names, so
